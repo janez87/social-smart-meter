@@ -1,0 +1,21 @@
+#python
+
+__pycache__/
+.twitter-test/
+
+#vscode
+
+.vscode/
+
+#configuration
+config.py
+configy.pyc
+
+# Binary File - Models
+
+*.bin
+*.npy
+
+# Data
+
+*.txt
