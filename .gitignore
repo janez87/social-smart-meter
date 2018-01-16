@@ -1,7 +1,10 @@
+#mac
+.DS_Store
+
 #python
 
 __pycache__/
-.twitter-test/
+.smm-annotation/
 
 #vscode
 

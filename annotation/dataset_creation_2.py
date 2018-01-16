@@ -1,12 +1,19 @@
+# system modules
+import logging
+import sys
+
+# external modules
 from stop_words import get_stop_words
 from gensim import corpora, models, utils
-import math
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from  sklearn.decomposition import TruncatedSVD
 from pymongo import MongoClient
-import logging
 
+# my modules
+sys.path.append("../")
+import config
 
 def get_tweets(collection):
     return list(collection.find())
@@ -118,7 +125,7 @@ def select_candidate_words(collection,model,dictionary,iteration_number):
         words = words.union(t["tokens"])
 
     new_words = []
-    
+
     for w in words:
         print(w)
         if w in dictionary or w in stop_words:
@@ -126,12 +133,12 @@ def select_candidate_words(collection,model,dictionary,iteration_number):
             continue
 
         try:
-            similar_words = list(map(lambda x: x[0],model.similar_by_word(w,topn=80)))
-            if np.any(np.in1d(dictionary,similar_words)):
+            similar_words = list(map(lambda x: x[0],model.similar_by_word(w,topn=10)))
+            if np.any(np.in1d(dictionary, similar_words)):
                 new_words.append({
                     "word":str(w),
                     "iteration":iteration_number,
-                    "origin":list(set(dictionary).intersection(similar_words))
+                    "origin": list(set(dictionary).intersection(similar_words))
                 })
                 print(w,"added to the dictionary")
         except Exception as e:
@@ -139,30 +146,66 @@ def select_candidate_words(collection,model,dictionary,iteration_number):
             continue
 
     return new_words
-    
+
+
+def evaluate_candidiate_tfidf(space,svd, candidates, tweet_seeds):
+    seed_vectors = []
+    for t in tweet_seeds:
+        vector = svd.transform(space.transform([t["tweet_text"]]))
+        #vector = vector.todense()
+        seed_vectors.append(vector[0])
+
+    seed_vectors = np.average(seed_vectors, axis=0)
+
+    print(seed_vectors)
+    similarities = []
+    for c in candidates:
+        vector = svd.transform(space.transform([c["tweet_text"]]))
+        #vector = vector.todense()
+        print(vector)
+        similarity = cosine_similarity(
+            vector[0].reshape(1, -1), seed_vectors.reshape(1, -1))
+
+        similarities.append([similarity[0], c["tweet_text"], c["label"]])
+
+    return sorted(similarities, key=lambda x: -x[0])
+
 def setup():
     print("Configuring the logger")
     logging.basicConfig(
         format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     print("Connecting to Mongo")
-    client = MongoClient('localhost', 27017)
-    db = client['twitter']
+    client = MongoClient(config.DB_HOST, config.DB_PORT)
+    db = client[config.DB_NAME]
     twitterCollection = db["tweet"]
 
     print("Loading the models")
     word2vec = models.KeyedVectors.load_word2vec_format(
-        "GoogleNews-vectors-negative300.bin",binary=True)
+        "../models/GoogleNews-vectors-negative300.bin",binary=True)
     print(word2vec)
-    doc2vec = models.Doc2Vec.load("tweet_model_doc2vec.bin")
+    doc2vec = models.Doc2Vec.load("tweet_model_doc2vec_v2.bin")
     print(doc2vec)
    
-    twitterCollection = db["tweet"]
-    dictionaryCollection = db["dictionary"]
-    return dictionaryCollection,twitterCollection, word2vec, doc2vec
+
+    twitterCollection = db["tweet_2"]
+    dictionaryCollection = db["dictionary_2"]
+    
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
+    
+    documents = list(twitterCollection.find({},{"tweet_text":1}))
+    #documents = list(map(lambda x: (' '.join(x["tokens"])),documents))
+    documents = list(map(lambda x: (x["tweet_text"]),documents))
+    X = vectorizer.fit_transform(documents)
+    
+    svd = TruncatedSVD(n_components=10)
+    svd.fit_transform(X) 
+
+    return dictionaryCollection,twitterCollection, word2vec, doc2vec,vectorizer,svd
 
 def main(iteration_number=50):
 
-    dictionaryCollection, twitterCollection, word2vec, doc2vec = setup()
+    dictionaryCollection, twitterCollection, word2vec, doc2vec,space,svd = setup()
+
     for i in range(0,iteration_number):
 
         print("Starting iteration number ", i)
@@ -181,7 +224,9 @@ def main(iteration_number=50):
             break
 
         print("Evaluating the candidates")
-        similarities = evaluate_candidate(doc2vec,candidates,seeds)
+        #similarities = evaluate_candidate(doc2vec,candidates,seeds)
+        similarities = evaluate_candidiate_tfidf(space,svd, candidates, seeds)
+
 
         print("Annotating the candidates")
         are_there_new_tweets = annotate_candidates(similarities,0,0.8,twitterCollection,i)
