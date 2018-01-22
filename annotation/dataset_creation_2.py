@@ -181,14 +181,15 @@ def setup():
 
     print("Loading the models")
     word2vec = models.KeyedVectors.load_word2vec_format(
-        "../models/GoogleNews-vectors-negative300.bin",binary=True)
+        "../models/GoogleNews-vectors-negative300.bin", binary=True)
+   # word2vec = models.KeyedVectors.load("tweet_model_word2vec.bin")
     print(word2vec)
     doc2vec = models.Doc2Vec.load("tweet_model_doc2vec_v2.bin")
     print(doc2vec)
    
 
-    twitterCollection = db["tweet_2"]
-    dictionaryCollection = db["dictionary_2"]
+    twitterCollection = db["tweet_3"]
+    dictionaryCollection = db["dictionary_3"]
     
     vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
     
@@ -224,8 +225,8 @@ def main(iteration_number=50):
             break
 
         print("Evaluating the candidates")
-        #similarities = evaluate_candidate(doc2vec,candidates,seeds)
-        similarities = evaluate_candidiate_tfidf(space,svd, candidates, seeds)
+        similarities = evaluate_candidate(doc2vec,candidates,seeds)
+        #similarities = evaluate_candidiate_tfidf(space,svd, candidates, seeds)
 
 
         print("Annotating the candidates")

@@ -7,7 +7,7 @@ import numpy as np
 from pymongo import MongoClient
 
 # my modules
-sys.path.append("../")
+sys.path.append("../")                      
 import config
 
 
@@ -70,6 +70,12 @@ def get_recall(tweetCollection):
 
     return TP/(TP+FN)
 
+def get_baseline_precision(tweetCollection):
+    TP = tweetCollection.find({"relevant":{"$exists":True},"crowd_evaluation":True}).count()
+    FN = tweetCollection.find({"relevant":{"$exists":True},"crowd_evaluation":False}).count()
+
+    return TP / (TP + FN)
+
 def main():
     dictionary, twitter = setup()
 
@@ -80,7 +86,7 @@ def main():
 
     precision = get_precision(twitter)
     recall = get_recall(twitter)
-    
+
     print("TP rate ",TP_rate)
     print("FP rate ",FP_rate)
     print("TN rate ",TN_rate)
@@ -88,4 +94,5 @@ def main():
     print("precision",precision)
     print("recall",recall)
 
+    print("precision baseline", get_baseline_precision(twitter))
 main()
