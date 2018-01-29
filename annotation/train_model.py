@@ -19,7 +19,7 @@ def get_tagged_documents(collection):
     }
     tweets = list(collection.find(query))
 
-    return list(map(lambda x: models.doc2vec.TaggedDocument(x["tokens"],[x["label"]]),tweets))
+    return list(map(lambda x: models.doc2vec.TaggedDocument(x["tokens"],[str(x["label"])]),tweets))
 
 def get_words(collection):
     query = {
@@ -32,7 +32,6 @@ def get_words(collection):
     return list(map(lambda x: x["tokens"], tweets))
 
 def train_doc_model(corpus,file):
-    print(corpus[0])
     print("Training Doc2Vec model")
     model = models.Doc2Vec(corpus)
     model.save(file)
@@ -46,10 +45,12 @@ def train_word_model(corpus,file):
 print("Connecting to Mongo")
 client = MongoClient(config.DB_HOST, config.DB_PORT)
 db = client[config.DB_NAME]
-twitterCollection = db["tweet"]
+
+TWEET_COLLECTION = "tweet_ams"
+twitterCollection = db[TWEET_COLLECTION]
 
 tweets = get_tagged_documents(twitterCollection)
-train_doc_model(tweets, "tweet_model_doc2vec_v2.bin")
+train_doc_model(tweets, "tweet_model_doc2vec_v2_amsterdam.bin")
 
 words = get_words(twitterCollection)
-train_word_model(words,"tweet_model_word2vec.bin")
+train_word_model(words, "tweet_model_word2vec_amsterdam.bin")

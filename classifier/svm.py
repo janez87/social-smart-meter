@@ -7,7 +7,7 @@ import math
 from gensim import models
 from pymongo import MongoClient
 from sklearn import svm
-
+import numpy as np
 # my modules
 sys.path.append("../")
 import config
@@ -88,17 +88,26 @@ def test(model, test_set):
 
     precision = TP/(TP+FP)
     recall = TP / (TP + FN)
-    print("Precision: ",precision)
-    print("Recall: ",recall)
+
+    return precision, recall
 
 def main():
     dictionaryCollection, twitterCollection, doc2vec = setup()
 
+    precisions = []
+    recalls = []
+    
+    for i in range(0,50):
+        print("Run ",i)
+        training, test_set = get_training_test_sets(twitterCollection,0.8,doc2vec)
 
-    training, test_set = get_training_test_sets(twitterCollection,0.8,doc2vec)
+        clf = train(training)
 
-    clf = train(training)
-
-    test(clf,test_set)
+        p, r = test(clf,test_set)
+        precisions.append(p)
+        recalls.append(r)
+    
+    print("Precision: ",np.average(precisions), " std: ",np.std(precisions))
+    print("Recall: ", np.average(recalls), " std: ", np.std(recalls))
 
 main()

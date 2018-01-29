@@ -10,7 +10,6 @@ from pymongo import MongoClient
 sys.path.append("../")                      
 import config
 
-
 def setup():
     print("Configuring the logger")
     logging.basicConfig(
@@ -70,11 +69,13 @@ def get_recall(tweetCollection):
 
     return TP/(TP+FN)
 
+''' I consider this as the baseline because if I suppose to not have the seeds, 
+I have to consider as valid a tweet if it contains a dictionary word, so it has been considered by the pipeline'''
 def get_baseline_precision(tweetCollection):
     TP = tweetCollection.find({"relevant":{"$exists":True},"crowd_evaluation":True}).count()
-    FN = tweetCollection.find({"relevant":{"$exists":True},"crowd_evaluation":False}).count()
+    FP = tweetCollection.find({"relevant":{"$exists":True},"crowd_evaluation":False}).count()
 
-    return TP / (TP + FN)
+    return TP / (TP + FP)
 
 def main():
     dictionary, twitter = setup()

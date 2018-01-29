@@ -24,6 +24,20 @@ def get_seeds(collection):
     }
     return list(collection.find(query))
 
+def get_tweet_vector(tokens,word_model):
+    word_vectors = [] 
+    for t in tokens:
+        if t in word_model:
+            word_vectors.append(word_model[t])
+        else:
+            print(t)
+    
+    if(len(word_vectors)==0):
+        return []
+
+    vector =  np.average(word_vectors,axis=0)
+
+    return vector
 
 def select_candidates_tweet(collection, dictionary):
     query = {
@@ -33,7 +47,9 @@ def select_candidates_tweet(collection, dictionary):
         "tokens.3":{
             "$exists":True
         },
-        "isSeed":False,
+        "$or":[{
+            "isSeed":{"$exists":False}
+        },{"isSeed":False}],
         "relevant":{
             "$exists":False
         }
@@ -47,35 +63,46 @@ def read_dictionary(dictionaryCollection,previousIteration):
     words = list(dictionaryCollection.find(query))
     return list(map(lambda x: x["word"],words))
 
-def evaluate_candidate(doc_model, candidates, tweet_seeds):
+def evaluate_candidate(doc_model, candidates, tweet_seeds,word_model):
 
     seed_vectors = []
     for t in tweet_seeds:
-        vector = doc_model.docvecs[t["label"]]
-        seed_vectors.append(vector)
+        #vector = doc_model.docvecs[t["label"]]
+        vector = doc_model.infer_vector(t["tokens"])
+        #vector = get_tweet_vector(t["tokens"],word_model)
+        if(len(vector)>0):
+            seed_vectors.append(vector)
 
-    seed_vectors = np.average(seed_vectors, axis=0)
+    #seed_vectors = np.average(seed_vectors, axis=0)
 
+    seed_vectors = np.array(seed_vectors)
     similarities = []
     for c in candidates:
-        vector = doc_model.docvecs[c["label"]]
-        similarity = cosine_similarity(
-            vector.reshape(1, -1), seed_vectors.reshape(1, -1))
+        #vector = doc_model.docvecs[c["label"]]
+        vector = doc_model.infer_vector(c["tokens"])
+        #vector = get_tweet_vector(c["tokens"], word_model)
+        ''' if(len(vector) > 0):
+            similarity = cosine_similarity(
+                vector.reshape(1, -1), seed_vectors.reshape(1, -1))
+        else:
+            similarity = [[-1.0]] '''
         
-        similarities.append([similarity[0], c["tweet_text"],c["label"]])
+        similarity = cosine_similarity(vector.reshape(1, -1), seed_vectors)
+        similarities.append([ max(similarity[0]), c["text"],c["label"]])
 
-    return sorted(similarities, key=lambda x: -x[0])
+    
+    return similarities
 
 def annotate_candidates(similarities, lower, higher,collection,iteration_number):
     bulk = collection.initialize_unordered_bulk_op()
     counter = 0
     new_tweet = False
 
-    print(similarities[0])
 
     for s in similarities:
 
-        similarity = float(s[0][0])
+        print(s)
+        similarity = float(s[0])
 
         update_query = {
             "$set": {
@@ -84,6 +111,7 @@ def annotate_candidates(similarities, lower, higher,collection,iteration_number)
             }
         }
         
+        print(similarity)
         if similarity >= higher:
             update_query["$set"]["relevant"] = True
             new_tweet = True
@@ -177,35 +205,23 @@ def setup():
     print("Connecting to Mongo")
     client = MongoClient(config.DB_HOST, config.DB_PORT)
     db = client[config.DB_NAME]
-    twitterCollection = db["tweet"]
+    twitterCollection = db["tweet_ams"]
 
     print("Loading the models")
     word2vec = models.KeyedVectors.load_word2vec_format(
         "../models/GoogleNews-vectors-negative300.bin", binary=True)
    # word2vec = models.KeyedVectors.load("tweet_model_word2vec.bin")
     print(word2vec)
-    doc2vec = models.Doc2Vec.load("tweet_model_doc2vec_v2.bin")
+    doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2.bin")
     print(doc2vec)
    
+    dictionaryCollection = db["dictionary_ams"]
 
-    twitterCollection = db["tweet_3"]
-    dictionaryCollection = db["dictionary_3"]
-    
-    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
-    
-    documents = list(twitterCollection.find({},{"tweet_text":1}))
-    #documents = list(map(lambda x: (' '.join(x["tokens"])),documents))
-    documents = list(map(lambda x: (x["tweet_text"]),documents))
-    X = vectorizer.fit_transform(documents)
-    
-    svd = TruncatedSVD(n_components=10)
-    svd.fit_transform(X) 
-
-    return dictionaryCollection,twitterCollection, word2vec, doc2vec,vectorizer,svd
+    return dictionaryCollection,twitterCollection, word2vec, doc2vec
 
 def main(iteration_number=50):
 
-    dictionaryCollection, twitterCollection, word2vec, doc2vec,space,svd = setup()
+    dictionaryCollection, twitterCollection, word2vec, doc2vec = setup()
 
     for i in range(0,iteration_number):
 
@@ -225,12 +241,11 @@ def main(iteration_number=50):
             break
 
         print("Evaluating the candidates")
-        similarities = evaluate_candidate(doc2vec,candidates,seeds)
-        #similarities = evaluate_candidiate_tfidf(space,svd, candidates, seeds)
+        similarities = evaluate_candidate(doc2vec,candidates,seeds,word2vec)
 
 
         print("Annotating the candidates")
-        are_there_new_tweets = annotate_candidates(similarities,0,0.8,twitterCollection,i)
+        are_there_new_tweets = annotate_candidates(similarities,0.5,0.8,twitterCollection,i)
 
         new_words = select_candidate_words(twitterCollection,word2vec,dictionary,i)
 
