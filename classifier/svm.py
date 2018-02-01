@@ -7,6 +7,7 @@ import math
 from gensim import models
 from pymongo import MongoClient
 from sklearn import svm
+from sklearn.preprocessing import normalize
 import numpy as np
 # my modules
 sys.path.append("../")
@@ -62,13 +63,14 @@ def get_training_test_sets(collection,training_ratio,doc_model):
     return training_set, test_set
 
 def train(training_set):
-    clf = svm.SVC(kernel='linear', C=1.0)
+    clf = svm.SVC(kernel='rbf', C=1.0)
 
     X=[]
     Y=[]
 
     for t in training_set:
-        X.append(t["vector"])
+        nornalized_vector = normalize(t["vector"].reshape(1,-1),axis=1)[0]
+        X.append(nornalized_vector)
         Y.append(t["relevant"])
 
     clf.fit(X,Y)
@@ -89,6 +91,12 @@ def test(model, test_set):
     precision = TP/(TP+FP)
     recall = TP / (TP + FN)
 
+    print("TP:", TP)
+    print("FP:", FP)
+    print("FN:", FN)
+    print("Precision", precision)
+    print("Recall ", recall)
+
     return precision, recall
 
 def main():
@@ -99,7 +107,7 @@ def main():
     
     for i in range(0,50):
         print("Run ",i)
-        training, test_set = get_training_test_sets(twitterCollection,0.8,doc2vec)
+        training, test_set = get_training_test_sets(twitterCollection,0.5,doc2vec)
 
         clf = train(training)
 

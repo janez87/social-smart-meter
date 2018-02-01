@@ -7,18 +7,29 @@ from stop_words import get_stop_words
 from gensim import corpora, models, utils
 from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
-
+from translation import bing
+from translation.exception import TranslateError
 # my modules
 sys.path.append("../")
 import config
 
-TWITTER_COLLECTION = "tweet_ams"
+TWITTER_COLLECTION = "tweet_ist"
 def tokenize(tweet):
     # Remove mentions and url
     tweet_text = re.sub(r"(?:\@|https?\://)\S+", "", tweet)
     tokens = [token for token in utils.simple_preprocess(
         tweet_text, deacc=False, min_len=3) if token not in stop_words_list]
     return tokens
+
+
+def to_english(tokens, src_lang):
+    sentence = " ".join(tokens)
+    try:
+        english_sentence = bing(sentence, src=src_lang, dst="en")
+        return english_sentence.split()
+    except TranslateError as t:
+        print(t)
+        return tokens
 
 if __name__=="__main__":
     stop_words_list = get_stop_words('en') + get_stop_words('nl')
@@ -42,6 +53,7 @@ if __name__=="__main__":
             text = tweet["text"]
 
         tokens = tokenize(text)
+        
         bulk.find({'_id': tweet['_id']}).update({'$set': {'tokens': tokens,"label":tweet["id_str"]}})
         counter += 1
 

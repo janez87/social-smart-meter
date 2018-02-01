@@ -7,9 +7,11 @@ from stop_words import get_stop_words
 from gensim import corpora, models, utils
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
 from sklearn.feature_extraction.text import TfidfVectorizer
-from  sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import TruncatedSVD
 from pymongo import MongoClient
+from translation import bing
 
 # my modules
 sys.path.append("../")
@@ -24,8 +26,21 @@ def get_seeds(collection):
     }
     return list(collection.find(query))
 
-def get_tweet_vector(tokens,word_model):
+
+def to_english(tokens,src_lang):
+    sentence = " ".join(tokens)
+    english_sentence = bing(sentence, src=src_lang, dst="en")
+    print(english_sentence)
+    return english_sentence.split()
+
+def get_tweet_vector(tweet,word_model):
     word_vectors = [] 
+
+    ''' if(tweet["lang"] != "en" and tweet["lang"] != "und"):
+        tokens = to_english(tweet["tokens"],tweet["lang"])
+    else:
+        tokens = tweet["tokens"] '''
+
     for t in tokens:
         if t in word_model:
             word_vectors.append(word_model[t])
@@ -67,28 +82,31 @@ def evaluate_candidate(doc_model, candidates, tweet_seeds,word_model):
 
     seed_vectors = []
     for t in tweet_seeds:
-        #vector = doc_model.docvecs[t["label"]]
-        vector = doc_model.infer_vector(t["tokens"])
-        #vector = get_tweet_vector(t["tokens"],word_model)
+        vector = doc_model.docvecs[t["label"]]
+        vector = normalize(vector.reshape(1, -1), axis=1)[0]
+        #vector = doc_model.infer_vector(t["tokens"])
+        #vector = get_tweet_vector(t,word_model)
         if(len(vector)>0):
             seed_vectors.append(vector)
 
-    #seed_vectors = np.average(seed_vectors, axis=0)
-
-    seed_vectors = np.array(seed_vectors)
+    seed_vectors = np.average(seed_vectors, axis=0)
+    seed_vector = normalize(seed_vector.reshape(1, -1), axis=1)[0]
+    #seed_vectors = np.array(seed_vectors)
     similarities = []
     for c in candidates:
-        #vector = doc_model.docvecs[c["label"]]
-        vector = doc_model.infer_vector(c["tokens"])
-        #vector = get_tweet_vector(c["tokens"], word_model)
+        vector = doc_model.docvecs[c["label"]]
+        vector = normalize(vector.reshape(1, -1), axis=1)[0]
+        #vector = doc_model.infer_vector(c["tokens"])
+        #vector = get_tweet_vector(c, word_model)
         ''' if(len(vector) > 0):
             similarity = cosine_similarity(
                 vector.reshape(1, -1), seed_vectors.reshape(1, -1))
         else:
             similarity = [[-1.0]] '''
         
-        similarity = cosine_similarity(vector.reshape(1, -1), seed_vectors)
-        similarities.append([ max(similarity[0]), c["text"],c["label"]])
+        similarity = cosine_similarity(
+            vector.reshape(1, -1), seed_vectors.reshape(1, -1))
+        similarities.append([ similarity[0], c["text"],c["label"]])
 
     
     return similarities
@@ -205,7 +223,6 @@ def setup():
     print("Connecting to Mongo")
     client = MongoClient(config.DB_HOST, config.DB_PORT)
     db = client[config.DB_NAME]
-    twitterCollection = db["tweet_ams"]
 
     print("Loading the models")
     word2vec = models.KeyedVectors.load_word2vec_format(
@@ -215,7 +232,8 @@ def setup():
     doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2.bin")
     print(doc2vec)
    
-    dictionaryCollection = db["dictionary_ams"]
+    dictionaryCollection = db["dictionary"]
+    twitterCollection = db["tweet"]
 
     return dictionaryCollection,twitterCollection, word2vec, doc2vec
 
@@ -245,7 +263,7 @@ def main(iteration_number=50):
 
 
         print("Annotating the candidates")
-        are_there_new_tweets = annotate_candidates(similarities,0.5,0.8,twitterCollection,i)
+        are_there_new_tweets = annotate_candidates(similarities,0.0,0.8,twitterCollection,i)
 
         new_words = select_candidate_words(twitterCollection,word2vec,dictionary,i)
 

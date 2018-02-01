@@ -9,9 +9,9 @@ from pymongo import MongoClient
 sys.path.append("../")
 import config
 
-#BOUNDING_BOX = [4.736851,52.273948,5.065755,52.430806] # Amsterdam
+BOUNDING_BOX = [4.736851,52.273948,5.065755,52.430806] # Amsterdam
 
-BOUNDING_BOX = [28.4480, 40.8027, 29.4579, 41.2360] # Istanbul
+#BOUNDING_BOX = [28.4480, 40.8027, 29.4579, 41.2360] # Istanbul
 
 class StreamCrawler(tweepy.StreamListener):
     
@@ -42,7 +42,7 @@ def main():
     print("Connecting to Mongo")
     client = MongoClient(config.DB_HOST, config.DB_PORT)
     db = client[config.DB_NAME]
-    twitterCollection = db["tweet_ist"]
+    twitterCollection = db["tweet_ams"]
 
     print("Authenticating")
     auth = tweepy.OAuthHandler(config.CONSUMER_KEY, config.CONSUMER_SECRET)
