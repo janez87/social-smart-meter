@@ -54,18 +54,18 @@ def get_FN_rate(tweetCollection):
 
 def get_precision(tweetCollection):
     TP = tweetCollection.find(
-       {"relevant": True, "crowd_evaluation": True}).count()
+       {"relevant": True, "crowd_evaluation":{"$exists":True},"crowd_evaluation": True}).count()
     FP = tweetCollection.find(
-         {"relevant": True, "crowd_evaluation": False}).count()
+        {"relevant": True, "crowd_evaluation": {"$exists": True}, "crowd_evaluation": False}).count()
    
    #TP / TP+FP
     return TP/(TP+FP)
 
 def get_recall(tweetCollection):
     TP = tweetCollection.find(
-        {"relevant": True, "crowd_evaluation": True}).count()
+        {"relevant": True, "crowd_evaluation": {"$exists": True}, "crowd_evaluation": True}).count()
     FN = tweetCollection.find(
-        {"relevant": False, "crowd_evaluation": True}).count()
+        {"relevant": False, "crowd_evaluation": {"$exists": True}, "crowd_evaluation": True}).count()
 
     return TP/(TP+FN)
 
@@ -80,18 +80,9 @@ def get_baseline_precision(tweetCollection):
 def main():
     dictionary, twitter = setup()
 
-    TP_rate = get_TP_rate(twitter)  
-    FP_rate = get_FP_rate(twitter)
-    TN_rate = get_TN_rate(twitter)
-    FN_rate = get_FN_rate(twitter)
-
     precision = get_precision(twitter)
     recall = get_recall(twitter)
 
-    print("TP rate ",TP_rate)
-    print("FP rate ",FP_rate)
-    print("TN rate ",TN_rate)
-    print("FN rate ",FN_rate)
     print("precision",precision)
     print("recall",recall)
 

@@ -3,13 +3,10 @@ import logging
 import sys
 
 # external modules
-from stop_words import get_stop_words
-from gensim import corpora, models, utils
+from gensim import models
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import TruncatedSVD
 from pymongo import MongoClient
 from translation import bing
 
@@ -17,105 +14,113 @@ from translation import bing
 sys.path.append("../")
 import config
 
+
 def get_tweets(collection):
     return list(collection.find())
 
+
 def get_seeds(collection):
+    ''' query = {
+        "$or":[{"isSeed":True},{"relevant":True}]
+    } '''
     query = {
-        "isSeed":True
+        "isSeed": True
     }
     return list(collection.find(query))
 
 
-def to_english(tokens,src_lang):
+def to_english(tokens, src_lang):
     sentence = " ".join(tokens)
     english_sentence = bing(sentence, src=src_lang, dst="en")
     print(english_sentence)
     return english_sentence.split()
 
-def get_tweet_vector(tweet,word_model):
-    word_vectors = [] 
+
+def get_tweet_vector(tweet, word_model):
+    word_vectors = []
 
     ''' if(tweet["lang"] != "en" and tweet["lang"] != "und"):
         tokens = to_english(tweet["tokens"],tweet["lang"])
     else:
         tokens = tweet["tokens"] '''
 
+    tokens = tweet["tokens"]
     for t in tokens:
         if t in word_model:
             word_vectors.append(word_model[t])
         else:
             print(t)
-    
-    if(len(word_vectors)==0):
+
+    if (len(word_vectors) == 0):
         return []
 
-    vector =  np.average(word_vectors,axis=0)
+    vector = np.average(word_vectors, axis=0)
 
     return vector
+
 
 def select_candidates_tweet(collection, dictionary):
     query = {
         "tokens": {
-                "$in":dictionary
+            "$in": dictionary
         },
-        "tokens.3":{
-            "$exists":True
+        "tokens.3": {
+            "$exists": True
         },
-        "$or":[{
-            "isSeed":{"$exists":False}
-        },{"isSeed":False}],
-        "relevant":{
-            "$exists":False
-        }
+        "relevant": {
+            "$exists": False
+        },
+        "$or": [{
+            "isSeed": {"$exists": False}
+        }, {"isSeed": False}]
     }
     return list(collection.find(query))
 
-def read_dictionary(dictionaryCollection,previousIteration):
+
+def read_dictionary(dictionary_collection, previous_iteration):
     query = {
-        "iteration":previousIteration
+        "iteration": previous_iteration
     }
-    words = list(dictionaryCollection.find(query))
-    return list(map(lambda x: x["word"],words))
+    words = list(dictionary_collection.find(query))
+    return list(map(lambda x: x["word"], words))
 
-def evaluate_candidate(doc_model, candidates, tweet_seeds,word_model):
 
+def evaluate_candidate(doc_model, candidates, tweet_seeds, word_model):
     seed_vectors = []
     for t in tweet_seeds:
         vector = doc_model.docvecs[t["label"]]
-        vector = normalize(vector.reshape(1, -1), axis=1)[0]
-        #vector = doc_model.infer_vector(t["tokens"])
-        #vector = get_tweet_vector(t,word_model)
-        if(len(vector)>0):
+        # vector = normalize(vector.reshape(1, -1), axis=1)[0]
+        # vector = doc_model.infer_vector(t["tokens"])
+        # vector = get_tweet_vector(t,word_model)
+        if len(vector) > 0:
             seed_vectors.append(vector)
 
     seed_vectors = np.average(seed_vectors, axis=0)
-    seed_vector = normalize(seed_vector.reshape(1, -1), axis=1)[0]
-    #seed_vectors = np.array(seed_vectors)
+    # seed_vectors = normalize(seed_vectors.reshape(1, -1), axis=1)[0]
+    # seed_vectors = np.array(seed_vectors)
     similarities = []
     for c in candidates:
         vector = doc_model.docvecs[c["label"]]
-        vector = normalize(vector.reshape(1, -1), axis=1)[0]
-        #vector = doc_model.infer_vector(c["tokens"])
-        #vector = get_tweet_vector(c, word_model)
+        # vector = normalize(vector.reshape(1, -1), axis=1)[0]
+        # vector = doc_model.infer_vector(c["tokens"])
+        # vector = get_tweet_vector(c, word_model)
         ''' if(len(vector) > 0):
             similarity = cosine_similarity(
                 vector.reshape(1, -1), seed_vectors.reshape(1, -1))
         else:
             similarity = [[-1.0]] '''
-        
+
         similarity = cosine_similarity(
             vector.reshape(1, -1), seed_vectors.reshape(1, -1))
-        similarities.append([ similarity[0], c["text"],c["label"]])
+        similarities.append([similarity[0], c["tokens"], c["label"]])
 
-    
     return similarities
 
-def annotate_candidates(similarities, lower, higher,collection,iteration_number):
-    bulk = collection.initialize_unordered_bulk_op()
-    counter = 0
-    new_tweet = False
 
+def annotate_candidates(similarities, lower, higher, collection, iteration_number):
+    bulk = collection.initialize_ordered_bulk_op()
+    counter = 0
+    new_tweets = 0
 
     for s in similarities:
 
@@ -124,81 +129,118 @@ def annotate_candidates(similarities, lower, higher,collection,iteration_number)
 
         update_query = {
             "$set": {
-                "similarity":similarity,
+                "similarity": similarity,
                 "iteration_number": iteration_number
             }
         }
-        
-        print(similarity)
+
         if similarity >= higher:
             update_query["$set"]["relevant"] = True
-            new_tweet = True
+            new_tweets += 1
         elif similarity < lower:
             update_query["$set"]["relevant"] = False
         else:
             continue
-        
-        print(update_query)
-        bulk.find({"label":s[2]}).update(update_query)
-        counter+=1
 
-        if (counter % 100 == 0):
+        print(update_query)
+        bulk.find({"label": s[2]}).update(update_query)
+        counter += 1
+
+        if counter % 100 == 0:
             print("Executing a bulk update")
             bulk.execute()
             bulk = collection.initialize_ordered_bulk_op()
-    
-    if (counter % 100 != 0):
+
+    if counter % 100 != 0:
         print("Executing the rest of the bulk")
         bulk.execute()
-    
-    return new_tweet
 
-def select_candidate_words(collection,model,dictionary,iteration_number):
+    return new_tweets
+
+
+def select_candidate_words(collection, dictionary_collection, model, dictionary, iteration_number):
     query = {
-        "relevant":True,
-        "iteration_number":iteration_number
+        "relevant": True,
+        "iteration_number": iteration_number
     }
     projection = {
-        "tokens":1
-    }      
-    tweets = list(collection.find(query,projection))
+        "tokens": 1
+    }
+    tweets = list(collection.find(query, projection))
 
-    stop_words =  get_stop_words('en')+ get_stop_words('es')
+    total_annotated_tweets = collection.find().count()
+    total_correct_tweets = len(tweets)
 
     words = set()
 
     for t in tweets:
         words = words.union(t["tokens"])
 
-    new_words = []
+    new_words = False
+    words = words - set(dictionary)
+
+    bulk = dictionary_collection.initialize_ordered_bulk_op()
+    counter = 0
 
     for w in words:
         print(w)
-        if w in dictionary or w in stop_words:
-            print(w, "is a dictionary or a stop words")
-            continue
+        if w in model:
+            similar_words = model.similar_by_word(w, topn=10)
+            similar_words = set(map(lambda x: x[0], similar_words))
+            common_words = similar_words.intersection(dictionary)
+            if len(common_words) > 0:
+                counter += 1
+                new_words = True
+                score = compute_word_score(w, total_annotated_tweets, total_correct_tweets, collection)
 
-        try:
-            similar_words = list(map(lambda x: x[0],model.similar_by_word(w,topn=10)))
-            if np.any(np.in1d(dictionary, similar_words)):
-                new_words.append({
-                    "word":str(w),
-                    "iteration":iteration_number,
-                    "origin": list(set(dictionary).intersection(similar_words))
+                if score<0.5:
+                    continue
+
+                bulk.insert({
+                    "word": w,
+                    "iteration": iteration_number,
+                    "origin": list(common_words),
+                    "score": score
                 })
-                print(w,"added to the dictionary")
-        except Exception as e:
-            print(e)
-            continue
+                print(w, "added to the dictionary")
+                if counter % 10 == 0:
+                    print("Executing a bulk insert")
+                    bulk.execute()
+                    bulk = dictionary_collection.initialize_ordered_bulk_op()
+
+    if counter % 10 != 0:
+        print("Executing the rest of the bulk")
+        bulk.execute()
 
     return new_words
 
 
-def evaluate_candidiate_tfidf(space,svd, candidates, tweet_seeds):
+def compute_word_score(word, tweets_number, tweets_correct_number, tweets_collection):
+    occurrence_query = {
+        "tokens": word,
+        "relevant": {
+            "$exists": True
+        }
+    }
+
+    occurrence_correct_query = {
+        "tokens": word,
+        "relevant": True
+    }
+
+    occurrence = tweets_collection.find(occurrence_query).count()
+    occurrence_correct = tweets_collection.find(occurrence_correct_query).count()
+
+    score = (occurrence_correct / tweets_correct_number) * (tweets_correct_number / tweets_number) / (
+                occurrence / tweets_number)
+    return score
+
+
+def evaluate_candidates_tfidf(space, svd, candidates, tweet_seeds):
     seed_vectors = []
     for t in tweet_seeds:
         vector = svd.transform(space.transform([t["tweet_text"]]))
-        #vector = vector.todense()
+        # vector = vector.todense()
         seed_vectors.append(vector[0])
 
     seed_vectors = np.average(seed_vectors, axis=0)
@@ -207,7 +249,7 @@ def evaluate_candidiate_tfidf(space,svd, candidates, tweet_seeds):
     similarities = []
     for c in candidates:
         vector = svd.transform(space.transform([c["tweet_text"]]))
-        #vector = vector.todense()
+        # vector = vector.todense()
         print(vector)
         similarity = cosine_similarity(
             vector[0].reshape(1, -1), seed_vectors.reshape(1, -1))
@@ -215,6 +257,7 @@ def evaluate_candidiate_tfidf(space,svd, candidates, tweet_seeds):
         similarities.append([similarity[0], c["tweet_text"], c["label"]])
 
     return sorted(similarities, key=lambda x: -x[0])
+
 
 def setup():
     print("Configuring the logger")
@@ -227,53 +270,51 @@ def setup():
     print("Loading the models")
     word2vec = models.KeyedVectors.load_word2vec_format(
         "../models/GoogleNews-vectors-negative300.bin", binary=True)
-   # word2vec = models.KeyedVectors.load("tweet_model_word2vec.bin")
+
+    # word2vec = models.KeyedVectors.load("tweet_model_word2vec.bin")
     print(word2vec)
     doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2.bin")
     print(doc2vec)
-   
-    dictionaryCollection = db["dictionary"]
-    twitterCollection = db["tweet"]
 
-    return dictionaryCollection,twitterCollection, word2vec, doc2vec
+    dictionary_collection = db["dictionary"]
+    twitter_collection = db["tweet"]
+
+    return dictionary_collection, twitter_collection, word2vec, doc2vec
+
 
 def main(iteration_number=50):
+    dictionary_collection, twitter_collection, word2vec, doc2vec = setup()
 
-    dictionaryCollection, twitterCollection, word2vec, doc2vec = setup()
-
-    for i in range(0,iteration_number):
+    for i in range(0, iteration_number):
 
         print("Starting iteration number ", i)
-        dictionary = read_dictionary(dictionaryCollection,i-1)
-        
+        dictionary = read_dictionary(dictionary_collection, i - 1)
 
-        seeds = get_seeds(twitterCollection)
+        seeds = get_seeds(twitter_collection)
 
         print("Retrieving the candidates")
-        candidates = select_candidates_tweet(twitterCollection,dictionary)
+        candidates = select_candidates_tweet(twitter_collection, dictionary)
 
-        print(len(candidates)," candidates found")
+        print(len(candidates), " candidates found")
 
-        if(len(candidates)==0):
+        if len(candidates) == 0:
             print("No more candidates found")
             break
 
         print("Evaluating the candidates")
-        similarities = evaluate_candidate(doc2vec,candidates,seeds,word2vec)
-
+        similarities = evaluate_candidate(doc2vec, candidates, seeds, word2vec)
 
         print("Annotating the candidates")
-        are_there_new_tweets = annotate_candidates(similarities,0.0,0.8,twitterCollection,i)
+        new_tweets_number = annotate_candidates(similarities, 0.0, 0.8, twitter_collection, i)
 
-        new_words = select_candidate_words(twitterCollection,word2vec,dictionary,i)
+        print("Expanding the dictionary")
+        new_words = select_candidate_words(twitter_collection, dictionary_collection, word2vec, dictionary, i)
 
-        if(len(new_words)>0):
-            dictionaryCollection.insert_many(new_words)
-
-        if(not are_there_new_tweets and len(new_words)==0):
+        if new_tweets_number == 0 and not new_words:
             print("Cannot further annotate any tweets")
             break
 
-    print("Done in ",i," iterations")
+    print("Done in ", i, " iterations")
+
 
 main()

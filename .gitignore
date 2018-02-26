@@ -7,8 +7,10 @@ __pycache__/
 .smm-annotation/
 
 #vscode
-
 .vscode/
+
+#pycharm
+.idea/
 
 #configuration
 config.py
