@@ -13,6 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import HashingVectorizer
 from scipy.sparse import vstack, csr_matrix
 import numpy as np
+from sklearn.externals import joblib
 
 # my modules
 sys.path.append("../")
@@ -28,15 +29,15 @@ def setup():
     db = client[config.DB_NAME]
 
     print("Loading the models")
-    doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2_300.bin")
+    doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2_300_new.bin")
 
-    twitterCollection = db["tweet"]
+    twitterCollection = db["tweet_leisure"]
     dictionaryCollection = db["dictionary"]
 
     vectorizer = HashingVectorizer(stop_words='english', ngram_range=(1, 1))
 
     documents = list(twitterCollection.find())
-    documents = list(map(lambda x: (' '.join(x["tokens"])),documents))
+    documents = list(map(lambda x: (' '.join(x["tokens"])), documents))
     vectorizer.fit(documents)
 
     return dictionaryCollection, twitterCollection, doc2vec, vectorizer
@@ -45,30 +46,38 @@ def setup():
 def get_training_test_sets(collection, training_ratio, doc_model, vectorizer):
     n_total = collection.find({"relevant": {"$exists": True}}).count()
 
-    n_training = math.floor(n_total * training_ratio/2)
+    n_training = math.floor(n_total * training_ratio / 2)
 
-    training_set = list(collection.aggregate([{"$match": {"relevant": True}}, {"$sample": {"size": n_training}}]))
-    training_set += list(collection.aggregate([{"$match": {"relevant": False}}, {"$sample": {"size": n_training}}]))
+    training_set = list(collection.aggregate(
+        [{"$match": {"tokens.3": {"$exists": True}, "relevant": True}}, {"$sample": {"size": n_training}}]))
+
+    # Usually there are more negative sample than positive
+    if len(training_set) < n_training:
+        n_training = len(training_set)
+
+    training_set += list(collection.aggregate(
+        [{"$match": {"tokens.3": {"$exists": True}, "relevant": False}},
+         {"$sample": {"size": n_training}}]))
 
     training_set_ids = list(map(lambda x: x["_id"], training_set))
 
     test_set = list(collection.find(
         {"_id": {"$nin": training_set_ids}, "crowd_evaluation": {"$exists": True}}))
 
-    #print(len(training_set))
-    #print(len(test_set))
+    # print(len(training_set))
+    # print(len(test_set))
 
     training_set = list(map(lambda x: {
         "label": x["label"],
-        #"vector": vectorizer.transform([' '.join(x["tokens"])]),
+        # "vector": vectorizer.transform([' '.join(x["tokens"])]),
         "vector": doc_model.docvecs[str(x["label"])],
-        "relevant": x["relevant"]
+        "relevant": x["relevant"] if "relevant" in x else False
     }, training_set))
 
     test_set = list(map(lambda x: {
         "label": x["label"],
-        #"vector": vectorizer.transform([' '.join(x["tokens"])]),
-        "vector":doc_model.docvecs[str(x["label"])],
+        # "vector": vectorizer.transform([' '.join(x["tokens"])]),
+        "vector": doc_model.docvecs[str(x["label"])],
         "gt": x["crowd_evaluation"],
         "text": x["text"]
     }, test_set))
@@ -76,16 +85,16 @@ def get_training_test_sets(collection, training_ratio, doc_model, vectorizer):
     return training_set, test_set
 
 
-def train(training_set,C,gamma):
+def train(training_set, C, gamma):
     clf = svm.SVC(kernel='rbf', C=C, gamma=gamma)
-    #X = csr_matrix((0,1048576))
+    # X = csr_matrix((0,1048576))
     X = []
     Y = []
 
     for t in training_set:
         normalized_vector = normalize(t["vector"].reshape(1, -1), axis=1)[0]
         X.append(normalized_vector)
-        #X = vstack([X,t["vector"]])
+        # X = vstack([X,t["vector"]])
         Y.append(t["relevant"])
 
     clf.fit(X, Y)
@@ -123,13 +132,26 @@ def test(model, test_set):
     return precision, recall, accuracy
 
 
+def save(twitter_collection, doc2vec, vectorizer):
+    # save the classifier
+    print("Training the final classifier")
+    training, test_set = get_training_test_sets(twitter_collection, 1, doc2vec, vectorizer)
+
+    svm = train(training, 1000, 0.001)
+    print("Saving the classfier")
+    joblib.dump(svm, "leisure_classifier.pkl", compress=9)
+
+
 def main():
     dictionary_collection, twitter_collection, doc2vec, vectorizer = setup()
 
-    C = [1,10,100,1000,10000]
-    #gammas = [1,0.1,0.01,0.001,0.0001]
-    gammas = [0.01]
-    print("Evaluating svm")
+    C = [1, 10, 100, 1000, 10000]
+    gammas = [1, 0.1, 0.01, 0.001, 0.0001]
+    # gammas = [0.01]
+
+    save(twitter_collection,doc2vec,vectorizer)
+
+    '''print("Evaluating svm")
 
     for c in C:
 
@@ -141,20 +163,20 @@ def main():
             print('C: ', c, 'Gamma: ', g)
 
             for i in range(0, 50):
-                #print("Run ", i)
+                # print("Run ", i)
                 training, test_set = get_training_test_sets(twitter_collection, 0.8, doc2vec, vectorizer)
 
-                clf = train(training,c,g)
+                clf = train(training, c, g)
 
                 p, r, a = test(clf, test_set)
                 precisions.append(p)
                 recalls.append(r)
                 accuracies.append(a)
 
-            #print('C: ', c[k], 'Gamma: ', gammas[k])
+            # print('C: ', c[k], 'Gamma: ', gammas[k])
             print("Precision: ", np.average(precisions), " std: ", np.std(precisions))
             print("Recall: ", np.average(recalls), " std: ", np.std(recalls))
-            print("Accuracy: ", np.average(accuracies), " std: ", np.std(accuracies))
+            print("Accuracy: ", np.average(accuracies), " std: ", np.std(accuracies))'''
 
 
 main()

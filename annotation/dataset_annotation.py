@@ -5,10 +5,13 @@ import sys
 # external modules
 from gensim import models
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
+from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.preprocessing import normalize
 from pymongo import MongoClient
 from translation import bing
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import vstack, csr_matrix
 
 # my modules
 sys.path.append("../")
@@ -36,7 +39,7 @@ def to_english(tokens, src_lang):
     return english_sentence.split()
 
 
-def get_tweet_vector(tweet, word_model):
+def get_tweet_vector(tweet, word_model, vectorizer, X):
     word_vectors = []
 
     ''' if(tweet["lang"] != "en" and tweet["lang"] != "und"):
@@ -45,16 +48,20 @@ def get_tweet_vector(tweet, word_model):
         tokens = tweet["tokens"] '''
 
     tokens = tweet["tokens"]
+    idf = 0
     for t in tokens:
-        if t in word_model:
-            word_vectors.append(word_model[t])
+        if t in word_model and t in vectorizer.vocabulary_:
+            word_index = vectorizer.vocabulary_[t]
+            idf_word = vectorizer.idf_[word_index]
+            idf += idf_word
+            word_vectors.append(idf_word*word_model[t])
         else:
             print(t)
 
-    if (len(word_vectors) == 0):
+    if len(word_vectors) == 0:
         return []
 
-    vector = np.average(word_vectors, axis=0)
+    vector = np.average(word_vectors, axis=0)/idf
 
     return vector
 
@@ -85,34 +92,32 @@ def read_dictionary(dictionary_collection, previous_iteration):
     return list(map(lambda x: x["word"], words))
 
 
-def evaluate_candidate(doc_model, candidates, tweet_seeds, word_model):
+def evaluate_candidate(doc_model, candidates, tweet_seeds, word_model, vectorizer, X):
     seed_vectors = []
     for t in tweet_seeds:
-        vector = doc_model.docvecs[t["label"]]
+        vector = doc_model.docvecs[str(t["label"])]
         # vector = normalize(vector.reshape(1, -1), axis=1)[0]
         # vector = doc_model.infer_vector(t["tokens"])
-        # vector = get_tweet_vector(t,word_model)
+        #vector = get_tweet_vector(t,word_model, vectorizer,X)
         if len(vector) > 0:
             seed_vectors.append(vector)
 
-    seed_vectors = np.average(seed_vectors, axis=0)
+    seed_vectors = np.mean(seed_vectors, axis=0)
     # seed_vectors = normalize(seed_vectors.reshape(1, -1), axis=1)[0]
     # seed_vectors = np.array(seed_vectors)
     similarities = []
     for c in candidates:
-        vector = doc_model.docvecs[c["label"]]
+        vector = doc_model.docvecs[str(c["label"])]
         # vector = normalize(vector.reshape(1, -1), axis=1)[0]
         # vector = doc_model.infer_vector(c["tokens"])
-        # vector = get_tweet_vector(c, word_model)
-        ''' if(len(vector) > 0):
+        #vector = get_tweet_vector(c, word_model, vectorizer, X)
+
+        if len(vector) == 0:
+            similarities.append([-1,c["tokens"],c["label"]])
+        else:
             similarity = cosine_similarity(
                 vector.reshape(1, -1), seed_vectors.reshape(1, -1))
-        else:
-            similarity = [[-1.0]] '''
-
-        similarity = cosine_similarity(
-            vector.reshape(1, -1), seed_vectors.reshape(1, -1))
-        similarities.append([similarity[0], c["tokens"], c["label"]])
+            similarities.append([similarity[0], c["tokens"], c["label"]])
 
     return similarities
 
@@ -208,7 +213,7 @@ def select_candidate_words(collection, dictionary_collection, model, dictionary,
                     bulk.execute()
                     bulk = dictionary_collection.initialize_ordered_bulk_op()
 
-    if counter % 10 != 0:
+    if counter > 0 and counter % 10 != 0:
         print("Executing the rest of the bulk")
         bulk.execute()
 
@@ -236,27 +241,30 @@ def compute_word_score(word, tweets_number, tweets_correct_number, tweets_collec
     return score
 
 
-def evaluate_candidates_tfidf(space, svd, candidates, tweet_seeds):
-    seed_vectors = []
+def evaluate_candidates_hash(space, candidates, tweet_seeds):
+    #seed_vectors = []
+    seed_vectors = csr_matrix((0, 500))
     for t in tweet_seeds:
-        vector = svd.transform(space.transform([t["tweet_text"]]))
+        vector = space.transform([" ".join(t["tokens"])])
         # vector = vector.todense()
-        seed_vectors.append(vector[0])
+        #seed_vectors.append(vector)
+        seed_vectors = vstack([seed_vectors, vector])
 
-    seed_vectors = np.average(seed_vectors, axis=0)
+    seed_vectors = seed_vectors.mean(axis=0)[0]
 
+    seed_vectors = normalize(seed_vectors)
     print(seed_vectors)
     similarities = []
     for c in candidates:
-        vector = svd.transform(space.transform([c["tweet_text"]]))
+        vector = space.transform([" ".join(c["tokens"])])
         # vector = vector.todense()
-        print(vector)
-        similarity = cosine_similarity(
-            vector[0].reshape(1, -1), seed_vectors.reshape(1, -1))
+        similarity = cosine_similarity(normalize(vector), seed_vectors)
+        print(similarity)
+        similarities.append([max(similarity[0]), c["text"], c["label"]])
 
-        similarities.append([similarity[0], c["tweet_text"], c["label"]])
-
-    return sorted(similarities, key=lambda x: -x[0])
+    sys.exit(0)
+    return similarities
+    #return sorted(similarities, key=lambda x: -x[0])
 
 
 def setup():
@@ -273,17 +281,23 @@ def setup():
 
     # word2vec = models.KeyedVectors.load("tweet_model_word2vec.bin")
     print(word2vec)
-    doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2.bin")
+    doc2vec = models.Doc2Vec.load("../models/tweet_model_doc2vec_v2_100_new.bin")
     print(doc2vec)
 
-    dictionary_collection = db["dictionary"]
-    twitter_collection = db["tweet"]
+    dictionary_collection = db["dictionary_leisure"]
+    twitter_collection = db["tweet_leisure  "]
 
-    return dictionary_collection, twitter_collection, word2vec, doc2vec
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
+
+    documents = list(twitter_collection.find())
+    documents = list(map(lambda x: (' '.join(x["tokens"])), documents))
+    X = vectorizer.fit_transform(documents)
+
+    return dictionary_collection, twitter_collection, word2vec, doc2vec, vectorizer, X
 
 
 def main(iteration_number=50):
-    dictionary_collection, twitter_collection, word2vec, doc2vec = setup()
+    dictionary_collection, twitter_collection, word2vec, doc2vec, vectorizer, X = setup()
 
     for i in range(0, iteration_number):
 
@@ -302,10 +316,12 @@ def main(iteration_number=50):
             break
 
         print("Evaluating the candidates")
-        similarities = evaluate_candidate(doc2vec, candidates, seeds, word2vec)
+
+        similarities = evaluate_candidate(doc2vec, candidates, seeds, word2vec, vectorizer, X)
+        #similarities = evaluate_candidates_hash(vectorizer, candidates, seeds)
 
         print("Annotating the candidates")
-        new_tweets_number = annotate_candidates(similarities, 0.0, 0.8, twitter_collection, i)
+        new_tweets_number = annotate_candidates(similarities, 0, 0.8, twitter_collection, i)
 
         print("Expanding the dictionary")
         new_words = select_candidate_words(twitter_collection, dictionary_collection, word2vec, dictionary, i)

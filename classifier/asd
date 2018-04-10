@@ -1,0 +1,218 @@
+instagram:
+    inst1:
+        client_id: 81883488b84d4b98826ebfee9c161083
+        client_secret: 91b97e2bfaee4e639c35b4d9c2ee0882
+        access_token: 5497768841.8188348.6511542e7de346b2b36995e76517e7bb
+    inst2:
+        client_id: 81883488b84d4b98826ebfee9c161083
+        client_secret: 91b97e2bfaee4e639c35b4d9c2ee0882
+        access_token: 2094437586.8188348.a8beec9a7df449da961eb2810298b55a
+inst_listen:
+    listen:
+        client_id: 81883488b84d4b98826ebfee9c161083
+        client_secret: 91b97e2bfaee4e639c35b4d9c2ee0882
+        access_token: 2094437586.8188348.a8beec9a7df449da961eb2810298b55a
+foursquare:
+    fsq1:
+        client_id: DJEDNZVMOGCTEDAITXPDXDB3ZLELYY212APD53BHJDRBDH2F
+        client_secret: J5W0DFRJO0K2UWMWCPGV2IXSFYAKHH0GEWIVSOTHL1XLFPGP
+        oauth_token: 1CEMSMTS0CRWOA2X1OVU5TFDNL3ITKE5HRGH0J2HTORF23GX
+
+    fsq2:
+        client_id: HUFAM5WFNHIPPKFKW04A2POUVWNCOBWHPP22VRNG1KTPNDLR
+        client_secret: GOQQX3XWHKVVBATBBNCRCR51UBV3RBM2LRSVQEJKU4XESWD0
+        oauth_token: NFKERBYV31UIG2YW0FLG0WST2OQZH4A44C21I5VKQU2SI4YZ
+    fsq3:
+        client_id: GWBMTWORLJRMF2NJISTV3AZLPXZWNJWPJJ4HBRN0WZTUA3JJ
+        client_secret: QQ1WH1YJVN5NYBG5BBYB0K3IAHF3VRJFOF1EGEKUIRWOAPPP
+        oauth_token: QQ1WH1YJVN5NYBG5BBYB0K3IAHF3VRJFOF1EGEKUIRWOAPPP
+twitter_stream:
+    stream:
+        consumerKey: GNPanRkNhPUo4Oo27eO82gtpB
+        consumerSecret: yIZ2hZzFXt61k0lloRXKSI1afaW7cruWyC8HQsqGHqWPyyObzZ
+        accessToken: 481245369-VDGP9FN0LYLdDZGWlPz8d1OynGUCBYuWAoXuQMhw
+        accessTokenSecret: NNYjnLlJdH98msgpXp40BB0HvU9JXk643Bs7wuZy6QMHh
+twitter_crawl:
+    tw1:
+        consumerKey: pcCUKbT1HHre6bn5nPEcw
+        consumerSecret: B02c9ATQBv3xn7MK7tcKCB0XXcNxvtohOtInQr3BM4
+        accessToken: 988515800-Dl5Uk6J9zNeoZUAnLTqcX2yUSVsEkO9lX9P7q8jL
+        accessTokenSecret: OmxQ2Ca5vlg7EuClSAjW6rb2DnmKaD9eRbOFpossFxs
+    tw2:
+        consumerKey: qw0AOxtAdrfVBw0X27Fw
+        consumerSecret: m6i83j0OKZWb1VFIrzDWbHYTD6ZzRGwJi6oJjNU3so
+        accessToken: 988527696-UvZTwhwTwMbyE1JEMys5FhjbmOYeeE7WjIGKnDjk
+        accessTokenSecret: 8f7NfZMs8bQn3NtapezUZebBpLhkTksjghVP5SEGs
+
+    tw3:
+        consumerKey: 1MJ7laVrlbjt7hHRrK3w
+        consumerSecret: ha7UItaZcGkQPAgnqoINvhxF3dPgy1v0FVRna5uN2A
+        accessToken: 92023570-ebBsO9ucwOoAKBOYZFCe446uD4xrrezMWTuJbJJhs
+        accessTokenSecret: kTtiQ86dwPaT1jUxzoJrY67IhtGyxRnr9prMIQV6W4
+
+    tw4:
+        consumerKey: YamiIEsP2ZnIsRcJPfjAag
+        consumerSecret: 2AIBFkwqIthG3jsnDqTNcJYoOi4lQSFmMHIulIhI
+        accessToken: 92023570-HIpfSKoFL3Fq9IeDsU7GTZeWDXx6LWBrXKhgsq60
+        accessTokenSecret: W2LysWcZmznawx2ltGkItIzePWMAVJHbPMNcFTXo
+
+    tw5:
+        consumerKey: qw0AOxtAdrfVBw0X27Fw
+        consumerSecret: m6i83j0OKZWb1VFIrzDWbHYTD6ZzRGwJi6oJjNU3so
+        accessToken: 988527696-UvZTwhwTwMbyE1JEMys5FhjbmOYeeE7WjIGKnDjk
+        accessTokenSecret: 8f7NfZMs8bQn3NtapezUZebBpLhkTksjghVP5SEGs
+
+    tw6:
+        consumerKey: xsEAaxj0nLNMXEw4wnGKw
+        consumerSecret: 6JkKcIw6K1M06uUD95TjUUydA8b9Sek0HngA5xoI
+        accessToken: 990692244-lohWwjAbeBlz00qummb2CvtvOcCG4TWVX55PczLB
+        accessTokenSecret: MNpEg5FeEfoVMxotGc62w3nLHpYzBUVGL9LcapRF3Ug
+
+    tw7:
+        consumerKey: qjfzUUp110akJ5Xtt6AZQ
+        consumerSecret: DpSF7YGyTq8P5BxuOXEuPtI23yF1nObZVVX3cMpo5Q
+        accessToken: 991401782-j5ma1Ohjq2VQN5aXxc8jEDQAU1NPJDWJl6bfeMAb
+        accessTokenSecret: AR4wkRmuMSu0pC4eTFa5cTCWrud4iLVOXxH5bugw
+
+    tw8:
+        consumerKey: zV2V2JMSa4QdHhPK6O6wg
+        consumerSecret: dfMmmgJcUOFXnabt2klHJ7ODxHQih3XNpxJGFoVNhk
+        accessToken: 1221457260-BNJLRovoUuWm0ZbKpq3RtCjYf4ZSdhnLfOk7fl7
+        accessTokenSecret: La8OswcILuFQ1jBQvcgpKM721JRPRcMXkSwbgnEUil8
+
+    tw9:
+        consumerKey: t43z7zQvzuHbjCFsNVHxg
+        consumerSecret: Hj4YBaXvnUZHuRxUR0bAOnnCrJVkJTV7qnqxyTBhk
+        accessToken: 1221495276-df3F7JGN14DAE8gJm8AjpcwsqEKlYJNU0mOkSrk
+        accessTokenSecret: gNd7VAyGrOzZFgGDe7xZfDCmt8xceexEQmpaELN47U
+
+    tw10:
+        consumerKey: epxqRLMLWdyIqVXjjyzvw
+        consumerSecret: uIEgulEpF11c1gJmsD90wHhPqfbLSihSL0SaNfN1A
+        accessToken: 1221521822-HGN7RXFRFJZBi0s1SECy298wVNQZ2pwoTjK1slV
+        accessTokenSecret: f68KZQWOFIDO1OJ76jp5GSMXrL1TKlq4KkAojrC6vqA
+
+    tw11:
+        consumerKey: SyTEeUVmy4jqXHCCuEy3Fw
+        consumerSecret: AUBQGJkXGExDnbtmaFOosXZijCPisEfmNEjO6TvXV0
+        accessToken: 1222251320-GFTUTEIAyzmaJRTqpBzy9lQBJKxRF7KKi2szWNc
+        accessTokenSecret: njc2NmsrVYGI0N3AwtZ3KYKWYP4QEhqXnZcEWiZ5xI
+
+    tw12:
+        consumerKey: th2dzC6NIkvmVRP9pRZ4w
+        consumerSecret: HJOzCSubbuWJcw3fpBbUpMYc7SSVwMgbfHcIxDFC8
+        accessToken: 1222229780-y0jjxOEkaa5QG1hVNBvYLcRu4Av3Eb7fMmFbwBa
+        accessTokenSecret: cb34jkGRAyzlYx1kfGhKihWsOBDDbrgMxeWqYxCeEg
+
+    tw13:
+        consumerKey: Li5rENzgmKbUjHzPYhzk2Q
+        consumerSecret: tAz19XBcFabV49mLgZC8WqHmcXk5vCuFcOOEgkGQuXw
+        accessToken: 1409886222-ICMq37ATY0M3b8pFpgYXgFdaLruETyfiXQTPSlU
+        accessTokenSecret: TO2NBSKawpYZXTzhgYdAEXoLfd29s0TYIshh85dXo
+
+    twi14:
+        consumerKey: 48BDXK96UNAV7Vsye5yDiA
+        consumerSecret: 3mW8YP6guHyHPbn8dXniFjbI4RIJyKWsBsA0Qg0d6w
+        accessToken: 1410143732-HY9lBb6vgfQ0OZdrlmt5esYC1e9HAzaJmpFZyTg
+        accessTokenSecret: b8hJxN9znpd4psIS0p9FCfiIkdQB0sckYo9pgPijc
+
+    tw15:
+        consumerKey: EeLL9zM8hgXtLO4wfM6vug
+        consumerSecret: e3wOmk8pDrcwYnY0ZcraHKd5M6uDo7IZtZZAAAux9o
+        accessToken: 1978017589-9WzbstBGTgd2fycNCXjp3LrPI7KaEAiqlnclvdj
+        accessTokenSecret: KTZoLiRB1qwEPZAeww3HtmBMdqCIUsVt0263a6Z8jdw
+
+    tw16:
+        consumerKey: dZMmwYoCOy9ajv99BCSIPQ
+        consumerSecret: kwArKVewpcz7dVbREJTusTLIfdPG21E24rrszfUO2U
+        accessToken: 1978037749-LydHyIOSouK3j4q074feVNuMIAxrOri0t3UwWKO
+        accessTokenSecret: J5GQ38ZbRvIrij0FGChAnx4QVkLOwY66EQCazozCU
+
+    tw17:
+        consumerKey: fNLBXfLOWajcmSchF2GQ
+        consumerSecret: PHxYMvfTt3WIbDSLt0pCKVd0IgdZ3oi5gm6HlqVo
+        accessToken: 1978027256-TLiebrIEwNqtOaFYxtMRFmifmlDoK3piZMR6QNG
+        accessTokenSecret: ZlSkdd2PT8JJ8C4yLVGhfLOuyOcGTU8m0SAsVrptQo
+
+    tw18:
+        consumerKey: SlXQ8VAo1z8nkIPBBJmcw
+        consumerSecret: vIpmjKoVAKJQOtsWOyWClQi2iWyvkpDNkF86Tgywc
+        accessToken: 1978040234-ZqZDhtyn4L46Jj5N5RE7cgiZ1GfAd4Rj0mBGtS2
+        accessTokenSecret: ePrtcZYM9QmeYnWrCHMgFNVv0kNZsB9JR98N154Rpc
+
+    tw19:
+        consumerKey: lEHuf8Ihn1wRyFEAqdhenw
+        consumerSecret: H5BmvjlHJx2EJdKIDPLxAungPAnbekQqDjQh2LeQ
+        accessToken: 1978012506-IdghJ5xA0N6emidypdwCHD5nzX7A0L7B9JqsGxC
+        accessTokenSecret: XpZI9MN2vf7Q1eHjiW1meZt2uag6ulIseKsUlraXXPs
+
+    tw20:
+        consumerKey: kfJDywxzpE9ssFPpHx2znA
+        consumerSecret: 5XlRfzXgLSuRaPniprQZWLtLcqaev40buSSVtFZkX4
+        accessToken: 1978021296-6QhkceOUGANHr01UWLRgGhUtEw6h1tNAq2bODwM
+        accessTokenSecret: YQtF1tc1WIibfHQs0IPZ81i9yardRG2Ewmvu1IyAMQw
+
+    tw21:
+        consumerKey: iGHbF6aTugnnjeUsgCgSrA
+        consumerSecret: 6k2mGPuQN00PAB1v70oygTNn86gDOK9tMaqJR6E5P5A
+        accessToken: 2148493062-RNgOUhW8vgS0o1vexihQUmN0DDYQaF7AhgpGVku
+        accessTokenSecret: hqI4GqqGfjTxSQHDnsLNuJkfIZdwFpaJo014EeB6g
+
+    tw22:
+        consumerKey: TcRrzZnX1e39sz2oBBtexQ
+        consumerSecret: 7jFhKEytJg2K9z6tCThIML9ffE6XjblSiaqwoCtfyk
+        accessToken: 2148499429-N5i2B9Go5t9dA8A0v6I4ngFcvhGQM2hP1ZbF7kz
+        accessTokenSecret: A7T8kjCHpVWAa3Z2FcXXUvBC4Uaf8KaKuuGWv8
+
+#    tw23:
+#        consumerKey: N0BN6maGVzreCtWAGJUyRg
+#        consumerSecret: gS4Ecq78KTWkZGo8qqfD66Kv6CsDxraqnbR8rQjBGU
+#        accessToken: 2148502561-EiDAL2f0jo6abY0E4qxaL1ghoodWalyWhwrbW19
+#        accessTokenSecret: Jzj80nGDZM7YqL1Q0nistfxKmWRXtnDSGtfXAkxoXEI
+
+#    tw24:
+#        consumerKey: bPgNSDN9JzyAAf5e910w
+#        consumerSecret: FxiNjfWTVxbMkF7y65zptS76QGE9giKnpe2AYXpWD4
+#        accessToken: 318590890-nil6w28ZA6u0ndagAfcIYtTSHaDsc3DFuQCUck6Q
+#        accessTokenSecret: 9zYdrT0rn05DiegdbUhcskqwrhxa3wVrnKhKVUyWD9UDV
+
+#    tw25:
+#        consumerKey: AOvucerUQi6x8SEV7bGOQkl72
+#        consumerSecret: UNR3iPYQ06Um0YAgt4tL4Pj6blWgZZDKqlSE5fGFz6iVJh1x4x
+#        accessToken: 318590890-AULYiwmg4tY039Fu4DveU0cmqjFc8bCVKOJZaNba
+#        accessTokenSecret: piMqnvOGfEBqDQgkSJmUWsL3jjnlzk7BxSWrJjYLVZVAD
+
+    tw26:
+        consumerKey: LEqVg6nMZbY4HYf4OjU0bQ
+        consumerSecret: 7iXgrTBmRuHOctDldP004KgVXljEqa0fzZDxKkcP0I
+        accessToken: 158663891-FDcldMm1x7Nm2oED0VQzCBCvdIOA0IqsJr2W51pP
+        accessTokenSecret: bSdUBqqTIZGDnKh8j2a7kx5kyOKleD3EwoVKMKqDgtc
+
+    tw27:
+        consumerKey: pcCUKbT1HHre6bn5nPEcw
+        consumerSecret: B02c9ATQBv3xn7MK7tcKCB0XXcNxvtohOtInQr3BM4
+        accessToken: 988515800-Dl5Uk6J9zNeoZUAnLTqcX2yUSVsEkO9lX9P7q8jL
+        accessTokenSecret: OmxQ2Ca5vlg7EuClSAjW6rb2DnmKaD9eRbOFpossFxs
+
+conf:
+    # how many times the size of the pool should be the max number of attempts
+    normalized.attempts: 10
+    # time-outs for http used for venue mapping
+    connect_timeout: 120000
+    read_timeout: 120000
+
+google:
+    google1:
+        key: AIzaSyBE54lyi9W-kH7JnylL8rIzQyyYM3KJEGI
+    google2:
+        key: AIzaSyD1DRhAlMG5kxizqVqipwjhkwfG65lkB74
+    google3:
+        key: AIzaSyAvBq2xcY-zHukW5EfzMqh6EUGa5RN2eZk
+    google4:
+        key: AIzaSyDT8gGdr_iZtCQkNqt2A9ehqFpQrPBOgyo
+    google5:
+        key: AIzaSyADrdMDpkQrFmHuYH_R1ZRzFL6TTgK5mVs
+    google6:
+        key: AIzaSyDvHzPkK6LI3ucMbTGM1JhJXHrv3nHBXdM
+
+

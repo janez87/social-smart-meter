@@ -64,7 +64,7 @@ twitterCollection = db[TWEET_COLLECTION]
 
 tweets = get_tagged_documents(twitterCollection)
 shuffle(tweets)
-train_doc_model_manual(tweets, "../models/tweet_model_doc2vec_v2_100_5.bin")
+train_doc_model(tweets, "../models/tweet_model_doc2vec_v2_100_new.bin")
 
 # words = get_words(twitterCollection)
 # train_word_model(words, "tweet_model_word2vec_amsterdam.bin")

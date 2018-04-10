@@ -13,7 +13,7 @@ from translation.exception import TranslateError
 sys.path.append("../")
 import config
 
-TWITTER_COLLECTION = "tweet_ist"
+TWITTER_COLLECTION = "tweet"
 def tokenize(tweet):
     # Remove mentions and url
     tweet_text = re.sub(r"(?:\@|https?\://)\S+", "", tweet)

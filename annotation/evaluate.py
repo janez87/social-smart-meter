@@ -17,7 +17,7 @@ def setup():
     print("Connecting to Mongo")
     client = MongoClient(config.DB_HOST, config.DB_PORT)
     db = client[config.DB_NAME]
-    twitterCollection = db["tweet"]
+    twitterCollection = db["tweet_leisure"]
 
     dictionaryCollection = db["dictionary_2"]
 
@@ -80,11 +80,14 @@ def get_baseline_precision(tweetCollection):
 def main():
     dictionary, twitter = setup()
 
+    considered_tweet = len(list(twitter.find({"crowd_evaluation":{"$exists":True}})))
+    all_tweet = len(list(twitter.find({"relevant":{"$exists":True}})))
     precision = get_precision(twitter)
     recall = get_recall(twitter)
 
-    print("precision",precision)
-    print("recall",recall)
+    print("Considered tweets",considered_tweet, "over", all_tweet)
+    print("Precision",precision)
+    print("Recall",recall)
 
-    print("precision baseline", get_baseline_precision(twitter))
+    print("Precision baseline", get_baseline_precision(twitter))
 main()
